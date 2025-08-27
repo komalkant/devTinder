@@ -1,8 +1,14 @@
 const express = require('express');
-
+const {authAdmin, userAuth} = require("./middlewares/auth");
 const app = express();
 
-app.get("/user", (req, res, next) => {
+app.use("/admin",authAdmin);
+app.get("/admin/getAllUser", (req,res, next)=>{
+    console.log("Get all Data");
+    res.send("getAlldata from API");
+})
+
+app.get("/user", userAuth, (req, res, next) => {
     console.log("Route handler1")
     next();
     //res.send('response send') // if you passingg next() function then res.send only workin last rote handler
@@ -10,7 +16,7 @@ app.get("/user", (req, res, next) => {
     console.log("Route handler2")
     next();
     // res.send('response send2')
-},, (req, res, next) => { // for multiple Route handler need to pass next() function
+}, (req, res, next) => { // for multiple Route handler need to pass next() function
     console.log("Route handler3")
     next();
     // res.send('response send2')
