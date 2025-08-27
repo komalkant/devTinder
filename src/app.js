@@ -4,8 +4,13 @@ const app = express();
 
 app.use("/admin",authAdmin);
 app.get("/admin/getAllUser", (req,res, next)=>{
-    console.log("Get all Data");
-    res.send("getAlldata from API");
+    try{
+        console.log("Get all Data");
+        throw new Error("some Error");
+        res.send("getAlldata from API");
+    } catch(err) {
+        res.status(500).send(err.message);
+    }
 })
 
 app.get("/user", userAuth, (req, res, next) => {
@@ -49,7 +54,13 @@ const cb2 = function (req, res) {
   res.send('Hello from C!')
 }
 
-app.get('/example/c', [cb0, cb1, cb2])
+app.get('/example/c', [cb0, cb1, cb2]);
+
+app.use("/", (err, res, req, next) => {
+    if(err){
+        res.status(500).send("something went wrong");
+    }
+})
 
 app.listen(5151, () => {
     console.log("server is Successfully running on the 5151 Port");
