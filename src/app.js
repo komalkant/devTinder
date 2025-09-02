@@ -15,24 +15,42 @@ connectDB()
     console.log("unable to connect");
 })
 
-app.get("/user", userAuth, (req, res, next) => {
-    console.log("Route handler1")
-    // next();
-    res.send('response send') // if you passingg next() function then res.send only workin last rote handler
-})
+app.use(express.json());
+
 
 app.post("/signup", async (req, res) => {
-    const user = new User({
-        firstName: "kk",
-        lastName: "Gupta1",
-        email: "kk@outlook.com",
-        password: "kk@123",
-})
+    console.log(req.body);
+    const user = new User(req.body);
 try {
     await user.save();
     res.send("user added Succsefully!");
 } catch(err) {
     res.status(500).send("Error saving the error", err);
 }
+});
 
-})
+app.get("/user", async (req, res)=> {
+    try {
+        const email = req.body.email;
+        const user = await User.find({email: email});
+        if(user.length === 0){
+            res.status(404).send("No user Found");
+        }
+        res.send(user);
+    } catch(err){
+        
+    }
+
+});
+
+app.get("/feed", async (req, res)=>{
+    try{
+        const users = await User.find({});
+        if(!users){
+            res.status(500).send("No user Found");
+        }
+        res.status(200).send(users);
+    } catch(err){
+        res.status(400).send("Somthing wen Wrong", err);
+    }
+});
