@@ -19,13 +19,13 @@ app.use(express.json());
 
 
 app.post("/signup", async (req, res) => {
+try {
     console.log(req.body);
     const user = new User(req.body);
-try {
     await user.save();
     res.send("user added Succsefully!");
 } catch(err) {
-    res.status(500).send("Error saving the error", err);
+    res.status(500).send("Error: " + err.message);
 }
 });
 
@@ -54,3 +54,29 @@ app.get("/feed", async (req, res)=>{
         res.status(400).send("Somthing wen Wrong", err);
     }
 });
+
+app.delete("/user", async (req, res) => {
+    try {
+    const userId = req.body.userId;
+    if(!userId) res.status(402).send("userId is empty");
+    const deleteUser = await User.findOneAndDelete({_id: userId});
+    console.log('deleteUser', deleteUser);
+    res.status(200).send("user deleted succesfully");
+    } catch (error){
+        res.status(400).send("Something went Wrong", error);
+    }
+});
+
+
+app.patch("/user", async (req, res) => {
+    try {
+    const userId = req.body.userId;
+    const data = req.body;
+    if(!userId) res.status(402).send("userId is empty");
+    const userUpdate = await User.findByIdAndUpdate({_id: userId}, data);
+    console.log('userUpdate', userUpdate);
+    res.status(200).send("userUpdate");
+    } catch (err){
+        res.status(400).send("Something went Wrong", err);
+    }
+})
