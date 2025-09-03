@@ -58,6 +58,7 @@ app.get("/feed", async (req, res)=>{
 app.delete("/user", async (req, res) => {
     try {
     const userId = req.body.userId;
+    const data = req.body;
     if(!userId) res.status(402).send("userId is empty");
     const deleteUser = await User.findOneAndDelete({_id: userId});
     console.log('deleteUser', deleteUser);
@@ -67,16 +68,29 @@ app.delete("/user", async (req, res) => {
     }
 });
 
-
-app.patch("/user", async (req, res) => {
+// update user
+app.patch("/user/:userId", async (req, res) => {
     try {
-    const userId = req.body.userId;
+    const userId = req.params?.userId;
     const data = req.body;
-    if(!userId) res.status(402).send("userId is empty");
-    const userUpdate = await User.findByIdAndUpdate({_id: userId}, data);
+    // if(!userId) res.status(402).send("userId is empty");
+    const Allowed_keys = ["photoUrl","age","gender","skills"];
+    const isUpdateAllowed = Object.keys(data).every((k) => 
+        Allowed_keys.includes(k)
+    );
+    if (!isUpdateAllowed) {
+        throw new Error("Update not allowed");
+    }
+    if(data?.skills.length > 10){
+        throw new Error("more then 10 skills not allowed");
+    }
+    const userUpdate = await User.findByIdAndUpdate({_id: userId}, data,{
+        returnDocument: "after",
+        runValidators: true
+    });
     console.log('userUpdate', userUpdate);
     res.status(200).send("userUpdate");
     } catch (err){
-        res.status(400).send("Something went Wrong", err);
+        res.status(400).send("Wrong: " + err);
     }
 })
