@@ -5,6 +5,9 @@ const app = express();
 const User = require("./models/user");
 const { validateSignUpData } = require('./utils/validation');
 const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const validator = require("validator");
+const jwt = require("jsonwebtoken");
 
 connectDB()
 .then(() => {
@@ -18,6 +21,7 @@ connectDB()
 })
 
 app.use(express.json());
+app.use(cookieParser());
 
 
 app.post("/signup", async (req, res) => {
@@ -40,26 +44,51 @@ try {
 }
 });
 
+app.get("/profile", userAuth, async(req,res) => {
+    try {
+        const user = req.user;
+        if(!user){
+            return res.status(404).send("No user found");
+        }
+        res.status(200).send(user);
+    } catch(err) {
+        return res.status(401).send("Unauthorized: Invalid token");
+    }
+})
+
+app.get("/sendConnectionRequest", userAuth, async (req, res) => {
+    try {
+        const user = req.user;
+        res.status(200).send(user.firstName + " " + user.lastName + " Connection request sent successfully");
+    } 
+        catch(err) {
+        return res.status(401).send("Unauthorized: Invalid token");
+    }
+})
 app.post("/login", async (req,res) => {
     try {
-    const {email, password} = req.body;
-    if(validator.isEmpty(email || "") || validator.isEmail(email || "")){
-        throw new Error("Email must not be empty and must be valid email");
-    }
-    const findEmail = await User.findOne({email: email}).toJson();
-    if(!findEmail){
-        throw new Error("Invalid credentials");
-    }
-    const isPassword = await bcrypt.compare(password, findEmail.password)
-    if(isPassword){
+        const {email, password} = req.body;
+        if(!validator.isEmail(email)){
+            throw new Error("Email must not be empty and must be valid email");
+        }
+        const findEmail = await User.findOne({email: email});
+        if(!findEmail){
+            throw new Error("Invalid credentials");
+        }
+        const isPasswordValid = await User.validatePassword(password);
+        if(isPasswordValid){
+            const jwtToken = await User.getJWT();
+            console.log("jwtToken", jwtToken);
+            res.cookie("token", jwtToken, {
+                expires: new Date(Date.now() + 25892000000),
+            });
             res.status(200).send("Login Successfull");
         } else {
             throw new Error("Invalid credentials");
-    }
+        }
     } catch(err) {
-    res.status(500).send("Error: " + err.message);
-}
-    
+        res.status(500).send("Error: " + err.message);
+    }  
 });
 
 app.get("/user", async (req, res)=> {
